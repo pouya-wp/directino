@@ -1,0 +1,8 @@
+# Replace with your real domain; Caddy fetches TLS certificates automatically.
+api.directino.app {
+	encode zstd gzip
+	reverse_proxy api:8080 {
+		# Server-sent events must not be buffered.
+		flush_interval -1
+	}
+}
