@@ -1,0 +1,275 @@
+@import "tailwindcss";
+
+/*
+  Directino tokens.
+  Shape system: interactive = full pill, panels = 28px, inner tiles/bubbles = 18px.
+  Z scale: grain 60, nav 50, everything else auto.
+*/
+:root {
+  --bg: #f1f3ef;
+  --surface: #ffffff;
+  --surface-2: #e6e9e2;
+  --ink: #121511;
+  --muted: #555b52;
+  --line: rgb(18 21 17 / 0.1);
+  --accent: #c4ec4f;
+  --accent-ink: #141a05;
+  --accent-text: #3f5a00;
+  --night: #0a0c0f;
+  --night-ink: #e9ece6;
+  --night-muted: #8d9389;
+  /* Chart series, validated for lightness band and contrast on the surface. */
+  --viz-1: #628a00;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0e0c;
+    --surface: #151814;
+    --surface-2: #1d211b;
+    --ink: #ecefe8;
+    --muted: #9ba196;
+    --line: rgb(236 239 232 / 0.1);
+    --accent: #c4ec4f;
+    --accent-ink: #141a05;
+    --accent-text: #c4ec4f;
+    --viz-1: #7aa61c;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-text: var(--accent-text);
+  --color-night: var(--night);
+  --color-night-ink: var(--night-ink);
+  --color-night-muted: var(--night-muted);
+  --color-viz-1: var(--viz-1);
+  --font-sans: var(--app-sans);
+  --font-display: var(--app-display);
+  --font-mono: var(--app-mono);
+}
+
+/* Font stacks live on html so they can see the next/font variables set on the same element. */
+html {
+  --app-sans: var(--font-geist), var(--font-peyda), ui-sans-serif, system-ui, sans-serif;
+  --app-display: var(--font-geist), var(--font-peyda), ui-sans-serif, system-ui, sans-serif;
+  --app-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+html[lang="fa"] {
+  /* Geist Mono has no Persian digits, so numbers use Peyda with tabular figures. */
+  --app-mono: var(--font-peyda), var(--font-geist-mono), ui-monospace, monospace;
+  --app-sans: var(--font-peyda), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --app-display: var(--font-gofteh), var(--font-peyda), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Headlines use the display face; Persian script must never get letter-spacing (it breaks the joins). */
+h1,
+h2,
+.font-display {
+  font-family: var(--app-display);
+  font-synthesis: none;
+}
+html[lang="fa"] .font-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+html[lang="fa"] :is(h1, h2, .font-display) {
+  letter-spacing: 0;
+  font-weight: 900;
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--app-sans);
+}
+
+html,
+body {
+  background: var(--bg);
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* Film grain on a fixed, non-scrolling layer only. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Cursor spotlight for feature cards (positions fed from features.tsx). */
+.spot {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), var(--spot-color, rgb(196 236 79 / 0.2)), transparent 60%);
+}
+[data-spot] > :not(.spot) {
+  position: relative;
+}
+@media (hover: hover) {
+  .grid:hover > [data-spot] > .spot {
+    opacity: 1;
+  }
+}
+
+/* Preloader: curtain lifts on its own even if JS never runs. */
+.preloader {
+  animation: curtain 0.8s cubic-bezier(0.76, 0, 0.24, 1) 1.9s forwards;
+}
+@keyframes curtain {
+  to {
+    clip-path: inset(0 0 100% 0);
+    visibility: hidden;
+  }
+}
+html.intro-seen .preloader {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .preloader {
+    display: none;
+  }
+}
+
+/* Final section flashlight. Wanders on its own until a mouse takes over. */
+.flashlight {
+  --fx: 30%;
+  --fy: 50%;
+  mask-image: radial-gradient(circle clamp(90px, 11vw, 220px) at var(--fx) var(--fy), black 0%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle clamp(90px, 11vw, 220px) at var(--fx) var(--fy), black 0%, black 40%, transparent 100%);
+}
+.lights-off:not([data-pointer="on"]) .flashlight {
+  animation: wander 9s ease-in-out infinite alternate;
+}
+.lights-off[data-pointer="on"] .flashlight {
+  --fx: inherit;
+  --fy: inherit;
+}
+@property --fx {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 30%;
+}
+@property --fy {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 50%;
+}
+@keyframes wander {
+  0% { --fx: 12%; --fy: 40%; }
+  50% { --fx: 55%; --fy: 70%; }
+  100% { --fx: 88%; --fy: 35%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flashlight {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}
+
+/* Crescent moon: the shadow side is cut out with a mask, not painted over. */
+.moon {
+  mask-image: radial-gradient(circle at 78% 30%, transparent 46%, black 47.5%);
+  -webkit-mask-image: radial-gradient(circle at 78% 30%, transparent 46%, black 47.5%);
+  box-shadow: inset -6px -4px 18px rgb(0 0 0 / 0.15);
+}
+[dir="rtl"] .moon {
+  mask-image: radial-gradient(circle at 22% 30%, transparent 46%, black 47.5%);
+  -webkit-mask-image: radial-gradient(circle at 22% 30%, transparent 46%, black 47.5%);
+}
+
+/* Featured plan: a light that runs around the card edge. */
+@property --ring-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.featured-ring::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  padding: 3px;
+  border-radius: 31px;
+  pointer-events: none;
+  background: conic-gradient(from var(--ring-angle), transparent 0deg, var(--ink) 50deg, transparent 110deg, transparent 360deg);
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
+  animation: ring-spin 4s linear infinite;
+}
+@keyframes ring-spin {
+  to {
+    --ring-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .featured-ring::before {
+    animation: none;
+  }
+}
+
+
+/* Android 12 style ink sparkle: a dot noise tile, kept on a soft ring that rides the wave edge and twinkles. */
+.ink-sparkle {
+  background: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'40'%20height%3D'40'%3E%3Ccircle%20cx%3D'0.0'%20cy%3D'36.8'%20r%3D'1.02'%2F%3E%3Ccircle%20cx%3D'8.4'%20cy%3D'29.2'%20r%3D'1.29'%2F%3E%3Ccircle%20cx%3D'13.2'%20cy%3D'30.1'%20r%3D'1.53'%2F%3E%3Ccircle%20cx%3D'21.7'%20cy%3D'27.4'%20r%3D'1.40'%2F%3E%3Ccircle%20cx%3D'32.7'%20cy%3D'9.7'%20r%3D'1.11'%2F%3E%3Ccircle%20cx%3D'28.3'%20cy%3D'27.9'%20r%3D'0.76'%2F%3E%3Ccircle%20cx%3D'27.4'%20cy%3D'18.7'%20r%3D'1.71'%2F%3E%3Ccircle%20cx%3D'32.3'%20cy%3D'4.9'%20r%3D'1.26'%2F%3E%3Ccircle%20cx%3D'36.9'%20cy%3D'27.5'%20r%3D'1.41'%2F%3E%3Ccircle%20cx%3D'23.1'%20cy%3D'36.5'%20r%3D'1.70'%2F%3E%3Ccircle%20cx%3D'14.9'%20cy%3D'13.4'%20r%3D'1.62'%2F%3E%3Ccircle%20cx%3D'13.3'%20cy%3D'6.1'%20r%3D'1.03'%2F%3E%3Ccircle%20cx%3D'17.1'%20cy%3D'11.8'%20r%3D'1.73'%2F%3E%3Ccircle%20cx%3D'22.3'%20cy%3D'29.2'%20r%3D'1.67'%2F%3E%3Ccircle%20cx%3D'2.3'%20cy%3D'10.9'%20r%3D'1.32'%2F%3E%3Ccircle%20cx%3D'20.4'%20cy%3D'16.9'%20r%3D'0.91'%2F%3E%3Ccircle%20cx%3D'36.4'%20cy%3D'2.2'%20r%3D'1.10'%2F%3E%3Ccircle%20cx%3D'13.8'%20cy%3D'26.6'%20r%3D'1.72'%2F%3E%3Ccircle%20cx%3D'20.6'%20cy%3D'6.6'%20r%3D'1.15'%2F%3E%3Ccircle%20cx%3D'11.3'%20cy%3D'14.6'%20r%3D'1.17'%2F%3E%3Ccircle%20cx%3D'13.3'%20cy%3D'21.3'%20r%3D'1.38'%2F%3E%3Ccircle%20cx%3D'9.3'%20cy%3D'36.3'%20r%3D'1.20'%2F%3E%3Ccircle%20cx%3D'34.5'%20cy%3D'25.4'%20r%3D'1.40'%2F%3E%3Ccircle%20cx%3D'20.6'%20cy%3D'20.2'%20r%3D'1.46'%2F%3E%3Ccircle%20cx%3D'37.6'%20cy%3D'15.9'%20r%3D'1.48'%2F%3E%3Ccircle%20cx%3D'10.0'%20cy%3D'23.5'%20r%3D'1.09'%2F%3E%3Ccircle%20cx%3D'13.2'%20cy%3D'15.7'%20r%3D'1.57'%2F%3E%3Ccircle%20cx%3D'35.1'%20cy%3D'4.4'%20r%3D'1.60'%2F%3E%3Ccircle%20cx%3D'3.1'%20cy%3D'16.3'%20r%3D'0.87'%2F%3E%3Ccircle%20cx%3D'3.1'%20cy%3D'39.8'%20r%3D'0.94'%2F%3E%3Ccircle%20cx%3D'25.3'%20cy%3D'5.8'%20r%3D'1.20'%2F%3E%3Ccircle%20cx%3D'23.7'%20cy%3D'5.5'%20r%3D'1.71'%2F%3E%3Ccircle%20cx%3D'35.4'%20cy%3D'35.6'%20r%3D'1.67'%2F%3E%3Ccircle%20cx%3D'36.3'%20cy%3D'30.4'%20r%3D'1.00'%2F%3E%3C%2Fsvg%3E"), radial-gradient(circle, transparent 18%, #000 42%, #000 62%, transparent 72%);
+  mask-size: 40px 40px, 100% 100%;
+  mask-composite: intersect;
+  animation: sparkle-drift 1s linear forwards, sparkle-twinkle 120ms steps(1) infinite;
+}
+.ink-sparkle-b {
+  mask-size: 40px 40px, 100% 100%;
+  animation-delay: 0s, 60ms;
+  transform: rotate(137deg);
+}
+@keyframes sparkle-drift {
+  from { mask-position: 0 0, center; }
+  to { mask-position: 11px -16px, center; }
+}
+@keyframes sparkle-twinkle {
+  0% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+
+/* Covers the page before hydration when a language switch hands over its curtain. */
+html.veil-on body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  background: var(--night);
+}
